@@ -3,23 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text to Image Generator</title>
+    <title>Text to Image and Video Generator</title>
 </head>
 <body>
-    <h1>Text to Image Generator</h1>
-    <form id="generate-form">
-        <label for="text">Enter text:</label>
+    <h1>Text to Image and Video Generator</h1>
+
+    <form id="generate-image-form">
+        <label for="text">Enter text for image:</label>
         <input type="text" id="text" name="text" required>
         <button type="submit">Generate Image</button>
     </form>
 
-    <div id="result">
+    <div id="image-result">
         <h2>Generated Image:</h2>
         <img id="generated-image" src="" alt="Generated Image">
     </div>
 
+    <form id="generate-video-form">
+        <label for="video-text">Enter text for video:</label>
+        <input type="text" id="video-text" name="text" required>
+        <button type="submit">Generate Video</button>
+    </form>
+
+    <div id="video-result">
+        <h2>Generated Video:</h2>
+        <video id="generated-video" controls width="600">
+            <source src="" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
     <script>
-        document.getElementById('generate-form').addEventListener('submit', async function(event) {
+        document.getElementById('generate-image-form').addEventListener('submit', async function(event) {
             event.preventDefault();
             const formData = new FormData(event.target);
             const text = formData.get('text');
@@ -34,6 +49,23 @@
 
             const data = await response.json();
             document.getElementById('generated-image').src = data.image_url;
+        });
+
+        document.getElementById('generate-video-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const text = formData.get('text');
+
+            const response = await fetch('/generate-video', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text })
+            });
+
+            const data = await response.json();
+            document.getElementById('generated-video').src = data.video_url;
         });
     </script>
 </body>
