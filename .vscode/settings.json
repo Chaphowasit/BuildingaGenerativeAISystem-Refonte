@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./text_to_image/download_"
+    ]
+}

@@ -1,50 +1,88 @@
-# from diffusers import StableDiffusionPipeline, DDPMScheduler, UNet2DConditionModel
-# from diffusers import AutoencoderKL, PNDMScheduler
-# from torch.utils.data import DataLoader
-# from transformers import CLIPTextModel
-# import torch
-# from torch.optim import AdamW
-# from tqdm import tqdm
-# from data_collection.download_datasets import prepare_coco_dataset
+from parti_pytorch import VitVQGanVAE, VQGanVAETrainer, Parti
+import torch
+from download_datasets import coco_dataset
+from torch.utils.data import DataLoader
+from PIL import Image
 
-# coco_dataset = prepare_coco_dataset()
+# Ensure coco_dataset is loaded properly and has data
+print(coco_dataset)
+print(f"Number of samples in dataset: {len(coco_dataset)}")
+print("Downloaded COCO dataset")
 
-# # Load pre-trained components
-# model_name = "CompVis/stable-diffusion-v1-4"
-# text_encoder = CLIPTextModel.from_pretrained(model_name)
-# vae = AutoencoderKL.from_pretrained(model_name)
-# unet = UNet2DConditionModel.from_pretrained(model_name)
+# Initialize and train the VQ-GAN VAE
+vit_vae = VitVQGanVAE(dim=256, image_size=256, patch_size=16, num_layers=3)
 
-# # Setup pipeline
-# pipeline = StableDiffusionPipeline.from_pretrained(
-#     model_name, 
-#     text_encoder=text_encoder,
-#     vae=vae,
-#     unet=unet,
-#     scheduler=DDPMScheduler(num_train_timesteps=1000)
-# )
+# Prepare DataLoader
+dataloader = DataLoader(
+    coco_dataset,
+    batch_size=1,  # Adjust based on your memory and dataset size
+    shuffle=True,
+    num_workers=4,  # Adjust based on your system
+)
 
-# # Training setup
-# train_dataloader = DataLoader(coco_dataset, batch_size=8, shuffle=True)
-# optimizer = AdamW(pipeline.unet.parameters(), lr=5e-5)
+trainer = VQGanVAETrainer(
+    vit_vae,
+    folder="data/coco/train2017/",  # Path to your COCO images
+    num_train_steps=100000,
+    lr=3e-4,
+    batch_size=1,
+    grad_accum_every=8,
+    amp=False,  # Disabled AMP for CPU
+)
 
-# # Training loop
-# for epoch in range(5):  # Adjust the number of epochs as necessary
-#     for batch in tqdm(train_dataloader):
-#         pixel_values = batch["pixel_values"].to(device)
-#         input_ids = torch.tensor(batch["input_ids"]).to(device)
+trainer.train()
+print("Trained VQ-GAN VAE")
 
-#         # Forward pass
-#         loss = pipeline(pixel_values=pixel_values, input_ids=input_ids).loss
-        
-#         # Backward pass
-#         optimizer.zero_grad()
-#         loss.backward()
-#         optimizer.step()
+# Save the trained VAE model
+torch.save(vit_vae.state_dict(), "vit_vae.pt")
 
-#     print(f"Epoch {epoch+1} completed. Loss: {loss.item()}")
+# Load the trained VQ-GAN VAE model
+vit_vae = VitVQGanVAE(dim=256, image_size=256, patch_size=16, num_layers=3)
+vit_vae.load_state_dict(torch.load("vit_vae.pt", map_location=torch.device("cpu")))
 
-# # Save the fine-tuned model
-# pipeline.save_pretrained("fine-tuned-stable-diffusion")
+# Initialize the Parti model with the trained VAE
+parti = Parti(
+    vae=vit_vae,
+    dim=512,
+    depth=8,
+    dim_head=64,
+    heads=8,
+    dropout=0.0,
+    cond_drop_prob=0.25,
+    ff_mult=4,
+    t5_name="t5-large",
+)
 
+# Example training loop with preprocessed data
+for batch in dataloader:  # Assuming dataloader provides batches of data
+    images = batch["pixel_values"]  # Tensor images
+    texts = batch["caption"]  # Texts associated with images
 
+    # Ensure images and texts are properly formatted
+    images = images.to(torch.device("cpu"))
+    texts = texts  # Assuming texts are already in the correct format
+
+    loss = parti(texts=texts, images=images, return_loss=True)
+    loss.backward()
+
+    # Perform optimizer step (you need to define the optimizer and step here)
+    # optimizer.step()
+    # optimizer.zero_grad()
+
+print("Trained Parti model")
+
+# Generate images from text prompts using the trained Parti model
+generated_images = parti.generate(
+    texts=[
+        "a whale breaching from afar",
+        "young girl blowing out candles on her birthday cake",
+        "fireworks with blue and green sparkles",
+    ],
+    cond_scale=3.0,
+    return_pil_images=True,
+)
+
+print("Generated images")
+# Display the generated images
+for img in generated_images:
+    img.show()
