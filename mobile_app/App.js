@@ -3,16 +3,51 @@ import { View, Text, TextInput, Button, Image, StyleSheet, Alert, ScrollView } f
 import * as ImagePicker from 'expo-image-picker';
 import { Video } from 'expo-av';  // Use expo-av for video playback
 
-// Dummy fetch functions for illustration
 const fetchImage = async (text) => {
-  // Replace with your actual API call
-  return { image_url: 'https://2.img-dpreview.com/files/p/E~C1000x0S4000x4000T1200x1200~articles/3925134721/0266554465.jpeg' };
+  try {
+    const response = await fetch('http://localhost:5000/generate-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const data = await response.json();
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch image:', error);
+    throw error;
+  }
 };
 
 const fetchVideo = async (text) => {
-  // Replace with your actual API call
-  return { video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' };
+  try {
+    const response = await fetch('http://localhost:5000/generate-video', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch video:', error);
+    throw error;
+  }
 };
+
 
 export default function App() {
   const [imageUri, setImageUri] = useState('');
