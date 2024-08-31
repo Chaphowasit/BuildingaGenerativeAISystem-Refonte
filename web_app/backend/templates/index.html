@@ -3,34 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text to Image and Video Generator</title>
+    <title>Text to Image & Video Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f9fc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .column {
+            flex: 1;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #image-result, #video-result {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        img, video {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Text to Image and Video Generator</h1>
+    <!-- Title Above the Container -->
+    <h1>Text to Image & Video Generator</h1>
 
-    <form id="generate-image-form">
-        <label for="text">Enter text for image:</label>
-        <input type="text" id="text" name="text" required>
-        <button type="submit">Generate Image</button>
-    </form>
+    <div class="container">
+        <!-- Left Column for Image Generation -->
+        <div class="column">
+            <form id="generate-image-form">
+                <label for="text">Enter text for image generation:</label>
+                <input type="text" id="text" name="text" placeholder="Type something..." required>
+                <button type="submit">Generate Image</button>
+            </form>
 
-    <div id="image-result">
-        <h2>Generated Image:</h2>
-        <img id="generated-image" src="" alt="Generated Image">
-    </div>
+            <div id="image-result" style="display:none;">
+                <h2>Generated Image:</h2>
+                <img id="generated-image" src="" alt="Generated Image">
+            </div>
+        </div>
 
-    <form id="generate-video-form">
-        <label for="video-text">Enter text for video:</label>
-        <input type="text" id="video-text" name="text" required>
-        <button type="submit">Generate Video</button>
-    </form>
+        <!-- Right Column for Video Generation -->
+        <div class="column">
+            <form id="generate-video-form">
+                <label for="video-text">Enter text for video generation:</label>
+                <input type="text" id="video-text" name="text" placeholder="Type something..." required>
+                <button type="submit">Generate Video</button>
+            </form>
 
-    <div id="video-result">
-        <h2>Generated Video:</h2>
-        <video id="generated-video" controls width="600">
-            <source src="" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
+            <div id="video-result" style="display:none;">
+                <h2>Generated Video:</h2>
+                <video id="generated-video" controls>
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -49,6 +149,7 @@
 
             const data = await response.json();
             document.getElementById('generated-image').src = data.image_url;
+            document.getElementById('image-result').style.display = 'block';
         });
 
         document.getElementById('generate-video-form').addEventListener('submit', async function(event) {
@@ -66,6 +167,7 @@
 
             const data = await response.json();
             document.getElementById('generated-video').src = data.video_url;
+            document.getElementById('video-result').style.display = 'block';
         });
     </script>
 </body>
