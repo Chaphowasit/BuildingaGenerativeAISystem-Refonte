@@ -100,28 +100,19 @@
     <!-- Title Above the Container -->
     <h1>Text to Image & Video Generator</h1>
 
-    <div class="container">
-        <!-- Left Column for Image Generation -->
-        <div class="column">
-            <form id="generate-image-form">
-                <label for="text">Enter text for image generation:</label>
-                <input type="text" id="text" name="text" placeholder="Type something..." required>
-                <button type="submit">Generate Image</button>
-            </form>
-
-            <div id="image-result" style="display:none;">
-                <h2>Generated Image:</h2>
-                <img id="generated-image" src="" alt="Generated Image">
-            </div>
-        </div>
-
-        <!-- Right Column for Video Generation -->
-        <div class="column">
-            <form id="generate-video-form">
-                <label for="video-text">Enter text for video generation:</label>
-                <input type="text" id="video-text" name="text" placeholder="Type something..." required>
-                <button type="submit">Generate Video</button>
-            </form>
+    <form id="generate-image-form" method="POST" action="/generate-image">
+        <label for="text">Enter text for image:</label>
+        <input type="text" id="text" name="image-text" required>
+        <button type="submit">Generate Image</button>
+    </form>
+    
+    <img id="generated-image" src="" alt="Generated Image" style="display:none;">
+    
+    <form id="generate-video-form">
+        <label for="video-text">Enter text for video:</label>
+        <input type="text" id="video-text" name="text" required>
+        <button type="submit">Generate Video</button>
+    </form>
 
             <div id="video-result" style="display:none;">
                 <h2>Generated Video:</h2>
@@ -136,20 +127,21 @@
     <script>
         document.getElementById('generate-image-form').addEventListener('submit', async function(event) {
             event.preventDefault();
+        
             const formData = new FormData(event.target);
-            const text = formData.get('text');
-
+        
             const response = await fetch('/generate-image', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ text })
+                body: formData  // Send form data directly
             });
-
+        
             const data = await response.json();
-            document.getElementById('generated-image').src = data.image_url;
-            document.getElementById('image-result').style.display = 'block';
+            if (response.ok) {
+                document.getElementById('generated-image').src = data.image_url;
+                document.getElementById('generated-image').style.display = 'block';
+            } else {
+                console.error(data.error);
+            }
         });
 
         document.getElementById('generate-video-form').addEventListener('submit', async function(event) {

@@ -1,88 +1,99 @@
-from parti_pytorch import VitVQGanVAE, VQGanVAETrainer, Parti
+import tkinter
+import customtkinter as ctk
+from PIL import ImageTk
 import torch
-from download_datasets import coco_dataset
-from torch.utils.data import DataLoader
-from PIL import Image
+from torch import autocast
+from diffusers import StableDiffusionPipeline
 
-# Ensure coco_dataset is loaded properly and has data
-print(coco_dataset)
-print(f"Number of samples in dataset: {len(coco_dataset)}")
-print("Downloaded COCO dataset")
+ctk.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
+ctk.set_default_color_theme(
+    "dark-blue"
+)  # Themes: "blue" (standard), "green", "dark-blue"
 
-# Initialize and train the VQ-GAN VAE
-vit_vae = VitVQGanVAE(dim=256, image_size=256, patch_size=16, num_layers=3)
 
-# Prepare DataLoader
-dataloader = DataLoader(
-    coco_dataset,
-    batch_size=1,  # Adjust based on your memory and dataset size
-    shuffle=True,
-    num_workers=4,  # Adjust based on your system
-)
+class App(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        # configures window
+        self.default_window_width = 1200
+        self.default_window_height = 800
+        self.authorization_token = "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"
 
-trainer = VQGanVAETrainer(
-    vit_vae,
-    folder="data/coco/train2017/",  # Path to your COCO images
-    num_train_steps=100000,
-    lr=3e-4,
-    batch_size=1,
-    grad_accum_every=8,
-    amp=False,  # Disabled AMP for CPU
-)
+        self.title("Image Generator")
+        self.geometry(f"{self.default_window_width}x{self.default_window_height}")
 
-trainer.train()
-print("Trained VQ-GAN VAE")
+        # generates user interface
+        self.windowlabel = ctk.CTkLabel(
+            self,
+            text="Avishake Adhikary's Image Generator",
+            font=ctk.CTkFont(size=30, weight="bold"),
+            padx=50,
+            pady=50,
+            text_color="white",
+        )
+        self.windowlabel.pack()
+        self.promptlabel = ctk.CTkLabel(
+            self,
+            text="Prompt",
+            font=ctk.CTkFont(family="Times New Roman", size=20, weight="bold"),
+            text_color="white",
+        )
+        self.promptlabel.pack()
+        self.promptentry = ctk.CTkEntry(
+            self,
+            placeholder_text="Enter your prompt here",
+            width=self.default_window_width - 20,
+            height=40,
+        )
+        self.promptentry.pack(padx=20, pady=20)
 
-# Save the trained VAE model
-torch.save(vit_vae.state_dict(), "vit_vae.pt")
+        self.generatebutton = ctk.CTkButton(
+            master=self,
+            text="Generate Image",
+            width=self.default_window_width - 50,
+            height=40,
+            fg_color="transparent",
+            border_width=2,
+            text_color="white",
+            command=self.generate,
+        )
+        self.generatebutton.pack()
 
-# Load the trained VQ-GAN VAE model
-vit_vae = VitVQGanVAE(dim=256, image_size=256, patch_size=16, num_layers=3)
-vit_vae.load_state_dict(torch.load("vit_vae.pt", map_location=torch.device("cpu")))
+    def generate(self):
+        self.textprompt = self.promptentry.get()
 
-# Initialize the Parti model with the trained VAE
-parti = Parti(
-    vae=vit_vae,
-    dim=512,
-    depth=8,
-    dim_head=64,
-    heads=8,
-    dropout=0.0,
-    cond_drop_prob=0.25,
-    ff_mult=4,
-    t5_name="t5-large",
-)
+        self.generatebutton.configure(state="disabled")
 
-# Example training loop with preprocessed data
-for batch in dataloader:  # Assuming dataloader provides batches of data
-    images = batch["pixel_values"]  # Tensor images
-    texts = batch["caption"]  # Texts associated with images
+        self.progress = ctk.CTkProgressBar(
+            master=self, orientation="horizontal", mode="indeterminate"
+        )
+        self.progress.pack()
+        self.progress.start()
 
-    # Ensure images and texts are properly formatted
-    images = images.to(torch.device("cpu"))
-    texts = texts  # Assuming texts are already in the correct format
+        self.modelid = "CompVis/stable-diffusion-v1-4"
+        self.device = torch.device("cuda")
+        self.pipe = StableDiffusionPipeline.from_pretrained(
+            self.modelid,
+            revision="fp16",
+            torch_dtype=torch.float16,
+            use_auth_token=self.authorization_token,
+        )
+        self.pipe.to(self.device)
 
-    loss = parti(texts=texts, images=images, return_loss=True)
-    loss.backward()
+        with autocast("cuda"):
+            self.image = self.pipe(self.textprompt, guidance_scale=8.5).images[0]
+            self.image.save("generatedimage.png")
+            self.img = ImageTk.PhotoImage(self.image)
 
-    # Perform optimizer step (you need to define the optimizer and step here)
-    # optimizer.step()
-    # optimizer.zero_grad()
+            self.imageview = ctk.CTkLabel(self, width=600, height=400)
+            self.imageview.pack()
+            self.imageview.configure(image=self.img)
 
-print("Trained Parti model")
+        self.progress.stop()
+        self.progress.pack_forget()
+        self.generatebutton.configure(state="normal")
 
-# Generate images from text prompts using the trained Parti model
-generated_images = parti.generate(
-    texts=[
-        "a whale breaching from afar",
-        "young girl blowing out candles on her birthday cake",
-        "fireworks with blue and green sparkles",
-    ],
-    cond_scale=3.0,
-    return_pil_images=True,
-)
 
-print("Generated images")
-# Display the generated images
-for img in generated_images:
-    img.show()
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()
