@@ -1,65 +1,83 @@
-from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
 import os
-from dotenv import load_dotenv
+import sys
+
 import torch
-from torch import autocast
-from diffusers import StableDiffusionPipeline
+from diffusers import (
+    DiffusionPipeline,
+    DPMSolverMultistepScheduler,
+    StableDiffusionPipeline,
+)
+from dotenv import load_dotenv
+from flask import Flask, jsonify, render_template, request
+from flask_cors import CORS
 
-# from dotenv import load_dotenv
+sys.path.append("../../text_to_image")
+sys.path.append("../../text_to_video")
 
-# load_dotenv()  # Load environment variables from .env file
+from video_gen import text_to_video_model
+from image_gen import text_to_image_model
 
+# load environment variables, authorization token, and device
+load_dotenv()
+authorization_token = os.getenv("AUTH_TOKEN", "")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Load the text-to-image model
+stable_diff_model = "CompVis/stable-diffusion-v1-4"
+stable_diff_pipe = StableDiffusionPipeline.from_pretrained(
+    stable_diff_model,
+    revision="fp16",
+    torch_dtype=torch.float16,
+    use_auth_token=authorization_token,
+)
+stable_diff_pipe.to(device)
+
+# Load the text-to-video model
+text_video_pipe = DiffusionPipeline.from_pretrained(
+    "damo-vilab/text-to-video-ms-1.7b", torch_dtype=torch.float16, variant="fp16"
+)
+text_video_pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+    text_video_pipe.scheduler.config
+)
+text_video_pipe.enable_model_cpu_offload()
+
+# Initialize the Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS
+CORS(app)
 
-# Base URL for serving images
-BASE_URL = os.getenv(
-    "BASE_URL", "http://localhost:5000"
-)  # Default to localhost for development
+# Set the base URL for the app
+BASE_URL = os.getenv("BASE_URL", "http://localhost:5000")
 
-# Path to save generated images
+# Create directories for generated images and videos
 GENERATED_IMAGES_PATH = os.path.join(app.static_folder, "generated_images")
 os.makedirs(GENERATED_IMAGES_PATH, exist_ok=True)
 
+GENERATED_VIDEOS_PATH = os.path.join(app.static_folder, "generated_videos")
+os.makedirs(GENERATED_VIDEOS_PATH, exist_ok=True)
 
+
+# Define the routes
 @app.route("/", methods=["GET"])
 def index():
     return render_template("index.html")
 
 
-def load_image_generator_model(device):
-    authorization_token = os.getenv("AUTH_TOKEN", "")
-    model_id = "CompVis/stable-diffusion-v1-4"
-    pipe = StableDiffusionPipeline.from_pretrained(
-        model_id,
-        revision="fp16",
-        torch_dtype=torch.float16,
-        use_auth_token=authorization_token,
-    )
-    pipe.to(device)
-    return pipe
-
-
 @app.route("/generate-image", methods=["POST"])
 def generate_image():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # Get prompt from the frontend form
-    prompt = request.form.get("image-text")  # Changed to 'image-text'
-    if not prompt:
-        return jsonify({"error": "No prompt provided"}), 400
-    # Load the model
-    pipe = load_image_generator_model(device)
-    # Generate the image
-    with autocast(str(device)):
-        image = pipe(prompt, guidance_scale=8.5).images[0]
-    # Save the image
-    image_filename = f"{prompt.replace(' ', '_')[:50]}.png"  # Limit filename length
-    image_path = os.path.join(GENERATED_IMAGES_PATH, image_filename)
-    image.save(image_path)
-    # Return the image URL
-    image_url = f"{BASE_URL}/static/generated_images/{image_filename}"
+    prompt = request.form.get("image-text")
+    image_url = text_to_image_model(
+        prompt, GENERATED_IMAGES_PATH, BASE_URL, device, stable_diff_pipe
+    )
     return jsonify({"image_url": image_url})
+
+
+@app.route("/generate-video", methods=["POST"])
+def generate_video_route():
+    prompt = request.form.get("video-text")
+    video_url = text_to_video_model(
+        prompt, GENERATED_VIDEOS_PATH, BASE_URL, device, text_video_pipe
+    )
+    return jsonify({"video_url": video_url})
 
 
 if __name__ == "__main__":

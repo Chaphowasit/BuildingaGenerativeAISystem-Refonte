@@ -6,10 +6,10 @@
     <title>Text to Image & Video Generator</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f7f9fc;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f4f8;
             margin: 0;
-            padding: 20px;
+            padding: 40px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -18,11 +18,10 @@
         }
 
         h1 {
-            color: #333;
-            font-size: 2.5rem;
-            margin-bottom: 20px;
+            color: #222;
+            font-size: 3rem;
+            margin-bottom: 40px;
             text-align: center;
-            width: 100%;
         }
 
         .container {
@@ -30,46 +29,48 @@
             gap: 40px;
             width: 100%;
             max-width: 1200px;
+            justify-content: space-between;
         }
 
         .column {
             flex: 1;
             background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            text-align: center;
         }
 
         label {
             display: block;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #555;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #444;
         }
 
         input[type="text"] {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 12px;
+            margin-bottom: 25px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
             font-size: 1rem;
         }
 
         button {
             width: 100%;
-            padding: 10px;
-            background-color: #007bff;
+            padding: 12px;
+            background-color: #28a745;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             color: white;
-            font-size: 1rem;
+            font-size: 1.1rem;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
 
         button:hover {
-            background-color: #0056b3;
+            background-color: #218838;
         }
 
         #image-result, #video-result {
@@ -78,7 +79,7 @@
         }
 
         h2 {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             color: #333;
             margin-bottom: 20px;
         }
@@ -86,7 +87,29 @@
         img, video {
             max-width: 100%;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            display: none;
+            font-size: 1.2rem;
+            color: #666;
+            margin-top: 20px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #007bff;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         @media (max-width: 768px) {
@@ -100,66 +123,93 @@
     <!-- Title Above the Container -->
     <h1>Text to Image & Video Generator</h1>
 
-    <form id="generate-image-form" method="POST" action="/generate-image">
-        <label for="text">Enter text for image:</label>
-        <input type="text" id="text" name="image-text" required>
-        <button type="submit">Generate Image</button>
-    </form>
-    
-    <img id="generated-image" src="" alt="Generated Image" style="display:none;">
-    
-    <form id="generate-video-form">
-        <label for="video-text">Enter text for video:</label>
-        <input type="text" id="video-text" name="text" required>
-        <button type="submit">Generate Video</button>
-    </form>
+    <div class="container">
+        <div class="column">
+            <form id="generate-image-form">
+                <label for="image-text">Enter text for image:</label>
+                <input type="text" id="image-text" name="image-text" placeholder="Describe your image..." required>
+                <button type="submit">Generate Image</button>
+                <div id="loading-image" class="loading">Generating image<span class="loading-spinner"></span></div>
+            </form>
+            
+            <div id="image-result">
+                <img id="generated-image" src="" alt="Generated Image" style="display:none;">
+            </div>
+        </div>
 
-            <div id="video-result" style="display:none;">
-                <h2>Generated Video:</h2>
-                <video id="generated-video" controls>
-                    <source src="" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
+        <div class="column">
+            <form id="generate-video-form">
+                <label for="video-text">Enter text for video:</label>
+                <input type="text" id="video-text" name="video-text" placeholder="Describe your video..." required>
+                <button type="submit">Generate Video</button>
+                <div id="loading-video" class="loading">Generating video<span class="loading-spinner"></span></div>
+            </form>
+
+            <div id="video-result">
+                <video id="generated-video" controls style="display:none;"></video>
             </div>
         </div>
     </div>
 
     <script>
+        // Handle Image Generation
         document.getElementById('generate-image-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-        
-            const formData = new FormData(event.target);
-        
-            const response = await fetch('/generate-image', {
-                method: 'POST',
-                body: formData  // Send form data directly
-            });
-        
-            const data = await response.json();
-            if (response.ok) {
-                document.getElementById('generated-image').src = data.image_url;
-                document.getElementById('generated-image').style.display = 'block';
-            } else {
-                console.error(data.error);
+            event.preventDefault();  // Prevent the form from submitting the traditional way
+            
+            const formData = new FormData(event.target);  // Capture form data
+            const loadingElement = document.getElementById('loading-image');
+            loadingElement.style.display = 'block';  // Show the loading spinner
+
+            try {
+                const response = await fetch('/generate-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();  // Parse JSON response
+                if (response.ok) {
+                    // Show the generated image
+                    const imgElement = document.getElementById('generated-image');
+                    imgElement.src = data.image_url;  // Use the image URL from the JSON response
+                    imgElement.style.display = 'block';  // Make the image visible
+                } else {
+                    console.error('Error generating image:', data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                loadingElement.style.display = 'none';  // Hide the loading spinner
             }
         });
 
+        // Handle Video Generation
         document.getElementById('generate-video-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const text = formData.get('text');
+            event.preventDefault();  // Prevent default form submission
+            
+            const formData = new FormData(event.target);  // Capture form data
+            const loadingElement = document.getElementById('loading-video');
+            loadingElement.style.display = 'block';  // Show the loading spinner
 
-            const response = await fetch('/generate-video', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ text })
-            });
-
-            const data = await response.json();
-            document.getElementById('generated-video').src = data.video_url;
-            document.getElementById('video-result').style.display = 'block';
+            try {
+                const response = await fetch('/generate-video', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();  // Parse JSON response
+                if (response.ok) {
+                    // Show the generated video
+                    const videoElement = document.getElementById('generated-video');
+                    videoElement.src = data.video_url;  // Use the video URL from the JSON response
+                    videoElement.style.display = 'block';  // Make the video visible
+                } else {
+                    console.error('Error generating video:', data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                loadingElement.style.display = 'none';  // Hide the loading spinner
+            }
         });
     </script>
 </body>

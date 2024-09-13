@@ -1,5 +1,7 @@
 {
     "python.analysis.extraPaths": [
-        "./text_to_image/download_"
+        "./text_to_image/download_",
+        "./text_to_image",
+        "./text_to_video"
     ]
 }

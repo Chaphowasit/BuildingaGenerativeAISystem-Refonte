@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Image, StyleSheet, Alert, ScrollView } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { View, Text, TextInput, Button, Image, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { Video } from 'expo-av';  // Use expo-av for video playback
 
 const fetchImage = async (text) => {
@@ -8,9 +7,9 @@ const fetchImage = async (text) => {
     const response = await fetch('http://localhost:5000/generate-image', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({ text }),
+      body: new URLSearchParams({ 'image-text': text }),
     });
 
     if (!response.ok) {
@@ -18,7 +17,6 @@ const fetchImage = async (text) => {
     }
 
     const data = await response.json();
-    console.log(data);
     return data;
   } catch (error) {
     console.error('Failed to fetch image:', error);
@@ -31,9 +29,9 @@ const fetchVideo = async (text) => {
     const response = await fetch('http://localhost:5000/generate-video', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({ text }),
+      body: new URLSearchParams({ 'video-text': text }),
     });
 
     if (!response.ok) {
@@ -48,29 +46,35 @@ const fetchVideo = async (text) => {
   }
 };
 
-
 export default function App() {
   const [imageUri, setImageUri] = useState('');
   const [videoUri, setVideoUri] = useState('');
   const [imageText, setImageText] = useState('');
   const [videoText, setVideoText] = useState('');
-
+  const [loadingImage, setLoadingImage] = useState(false);
+  const [loadingVideo, setLoadingVideo] = useState(false);
 
   const handleGenerateImage = async () => {
+    setLoadingImage(true); // Show loading spinner
     try {
       const data = await fetchImage(imageText);
       setImageUri(data.image_url);
     } catch (error) {
       Alert.alert('Error', 'Failed to generate image');
+    } finally {
+      setLoadingImage(false); // Hide loading spinner
     }
   };
 
   const handleGenerateVideo = async () => {
+    setLoadingVideo(true); // Show loading spinner
     try {
       const data = await fetchVideo(videoText);
       setVideoUri(data.video_url);
     } catch (error) {
       Alert.alert('Error', 'Failed to generate video');
+    } finally {
+      setLoadingVideo(false); // Hide loading spinner
     }
   };
 
@@ -78,6 +82,7 @@ export default function App() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Text to Image & Video Generator</Text>
 
+      {/* Image Generation Section */}
       <View style={styles.column}>
         <Text style={styles.label}>Enter text for image generation:</Text>
         <TextInput
@@ -88,8 +93,7 @@ export default function App() {
         />
         <Button title="Generate Image" onPress={handleGenerateImage} />
 
-
-
+        {loadingImage && <ActivityIndicator size="large" color="#007bff" style={styles.spinner} />}
         {imageUri ? (
           <View style={styles.result}>
             <Text style={styles.resultTitle}>Generated Image:</Text>
@@ -98,6 +102,7 @@ export default function App() {
         ) : null}
       </View>
 
+      {/* Video Generation Section */}
       <View style={styles.column}>
         <Text style={styles.label}>Enter text for video generation:</Text>
         <TextInput
@@ -108,7 +113,7 @@ export default function App() {
         />
         <Button title="Generate Video" onPress={handleGenerateVideo} />
 
-
+        {loadingVideo && <ActivityIndicator size="large" color="#007bff" style={styles.spinner} />}
         {videoUri ? (
           <View style={styles.result}>
             <Text style={styles.resultTitle}>Generated Video:</Text>
@@ -133,7 +138,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
@@ -153,11 +158,12 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: 'bold',
     marginBottom: 8,
+    fontSize: 16,
     color: '#555',
   },
   input: {
     width: '100%',
-    padding: 10,
+    padding: 12,
     marginBottom: 20,
     borderWidth: 1,
     borderColor: '#ddd',
@@ -175,11 +181,15 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 150,
+    height: undefined, // This allows the height to be calculated based on the aspect ratio
+    aspectRatio: 1, // Adjust this based on the aspect ratio of your images
     borderRadius: 10,
   },
   video: {
     width: '100%',
-    height: 200,
+    height: 300, // You can adjust this height based on your preference
+  },
+  spinner: {
+    marginTop: 10,
   },
 });
