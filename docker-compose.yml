@@ -1,0 +1,18 @@
+services:
+  backend:
+    build:
+      context: ./web_app/frontend_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - EXPO_NO_TUNNEL=true  # Disable ngrok
+      - VITE_API_URL=${VITE_API_URL}
+    volumes:
+      - ./web_app/frontend_backend:/app
+    container_name: flask-backend
+
+  frontend:
+    build:
+      context: ./mobile_app/frontend
+    ports:
+      - "19000:8081"

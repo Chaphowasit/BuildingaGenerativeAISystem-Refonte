@@ -11,11 +11,8 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 
-sys.path.append("../../text_to_image")
-sys.path.append("../../text_to_video")
-
-from video_gen import text_to_video_model
-from image_gen import text_to_image_model
+from text_to_video.video_gen import text_to_video_model
+from text_to_image.image_gen import text_to_image_model
 
 # load environment variables, authorization token, and device
 load_dotenv()

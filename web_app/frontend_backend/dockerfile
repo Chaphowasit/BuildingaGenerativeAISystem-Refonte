@@ -1,0 +1,26 @@
+# Step 1: Use the official NVIDIA CUDA base image with PyTorch and Python 3.10 support
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+
+# Step 2: Install Python and system dependencies
+RUN apt-get update && apt-get install -y \
+    python3.10 python3-pip python3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Step 3: Set the working directory
+WORKDIR /app
+
+# Step 4: Copy the Flask app code into the container
+COPY . /app
+
+# Step 5: Install Python dependencies
+# Install PyTorch directly here (with CUDA 11.8 support)
+RUN pip install --no-cache-dir torch==2.0.0+cu118 torchvision==0.15.1+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
+
+# Step 6: Install the rest of the dependencies from requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Step 7: Expose port 5000
+EXPOSE 5000
+
+# Step 8: Run the Flask app
+CMD ["python3", "app.py"]

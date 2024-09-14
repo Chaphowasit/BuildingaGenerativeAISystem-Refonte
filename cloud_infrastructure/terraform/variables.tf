@@ -17,7 +17,7 @@ variable "domain_name" {
 variable "r53_zone_id" {
   type        = string
   description = "The zone ID of the domain you are deploying to, you can get it from R53 DNS Dashboard"
-  default     = "Z002051618M4QHG4VM3M6"
+  default     = "Z05010881LJUQQXQQ3LKG"
 }
 
 ### EC2 Values ###

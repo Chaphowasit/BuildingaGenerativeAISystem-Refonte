@@ -1,0 +1,20 @@
+# Step 1: Use Node.js image as the base
+FROM node:16-buster
+
+# Step 2: Set the working directory
+WORKDIR /app
+
+# Step 3: Install Expo CLI globally and @expo/ngrok globally to prevent prompts
+RUN npm install -g expo-cli @expo/ngrok
+
+# Step 4: Copy the React Native app code into the container
+COPY . /app
+
+# Step 5: Install dependencies
+RUN npm install
+
+# Step 6: Expose port 19000 for Expo's development server (default port)
+EXPOSE 8081
+
+# Step 7: Start the Expo development server in LAN mode (to avoid ngrok prompt)
+CMD ["npx", "expo", "start", "--lan"]
