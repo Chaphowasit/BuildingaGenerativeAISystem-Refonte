@@ -1,70 +1,26 @@
-name: Deploy to Amazon ECS
+name: Print Secrets (for debugging purposes)
+
 on:
   push:
     branches:
-      - "main"
-  workflow_dispatch:
+      - main
 
-# secrets:
-#  DOCKER_HUB_USERNAME:
-#  DOCKER_HUB_PASSWORD:
-#  AWS_ACCESS_KEY_ID:
-#  AWS_SECRET_ACCESS_KEY:
-
-env:
-  IMAGE_NAME: refonte_genai_backend
-  AWS_REGION: ap-southeast-1
-  ECS_SERVICE: folderit-webservice-service-webservice
-  ECS_CLUSTER: ecs-folderit-cluster
-  ECS_TASK_DEFINITION: aws/td.json
-  CONTAINER_IMAGE: bigrock4522/refonte_genai_backend
-  CONTAINER_NAME: refonte-genai-backend
-
-defaults:
-  run:
-    shell: bash
 jobs:
-  deploy:
-    name: Deploy
+  print-secrets:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
+    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: https://index.docker.io/v1/
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Build and push
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ${{ env.ECS_TASK_DEFINITION }}
-          container-name: ${{ env.CONTAINER_NAME }}
-          image: ${{ env.CONTAINER_IMAGE }}
-      - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
+    - name: Check out repository
+      uses: actions/checkout@v3
+    
+    - name: Access and echo secrets (Do NOT print directly!)
+      env:
+        SECRET_VALUE: ${{ secrets.DOCKER_HUB_USERNAME }}
+      run: |
+        echo "Secret value is set, but not printed to the logs!"
+        # Optionally, you can check for non-empty value
+        if [ -z "$SECRET_VALUE" ]; then
+          echo "Secret is empty!"
+        else
+          echo "Secret is present!"
+        fi
