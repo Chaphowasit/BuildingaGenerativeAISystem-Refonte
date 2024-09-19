@@ -36,7 +36,7 @@ text_video_pipe = DiffusionPipeline.from_pretrained(
 text_video_pipe.scheduler = DPMSolverMultistepScheduler.from_config(
     text_video_pipe.scheduler.config
 )
-text_video_pipe.enable_model_cpu_offload()
+text_video_pipe.to(device)
 
 # Initialize the Flask app
 app = Flask(__name__)
