@@ -1,26 +1,16 @@
-name: Print Secrets (for debugging purposes)
+name: ci
 
 on:
   push:
-    branches:
-      - main
+    branches: main
 
 jobs:
-  print-secrets:
+  login:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v3
-    
-    - name: Access and echo secrets (Do NOT print directly!)
-      env:
-        SECRET_VALUE: ${{ secrets.DOCKER_HUB_USERNAME }}
-      run: |
-        echo "Secret value is set, but not printed to the logs!"
-        # Optionally, you can check for non-empty value
-        if [ -z "$SECRET_VALUE" ]; then
-          echo "Secret is empty!"
-        else
-          echo "Secret is present!"
-        fi
+      -
+        name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
