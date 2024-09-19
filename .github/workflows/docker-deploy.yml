@@ -1,4 +1,4 @@
-name: Build and Push Docker Image to Docker Hub
+name: Build and Push Docker Images to Docker Hub
 on:
   push:
     branches:
@@ -6,8 +6,9 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: refonte_genai_backend  # Name of your Docker image
-  CONTAINER_IMAGE: bigrock4522/refonte_genai_backend  # Full path to your image on Docker Hub
+  DOCKER_USERNAME: bigrock4522
+  MOBILE_IMAGE_NAME: refonte_genai_mobile_frontend  # Name for the mobile frontend Docker image
+  WEB_IMAGE_NAME: refonte_genai_web_frontend_backend  # Name for the web frontend-backend Docker image
 
 defaults:
   run:
@@ -15,7 +16,7 @@ defaults:
 
 jobs:
   build-and-push:
-    name: Build and Push to Docker Hub with Versioning
+    name: Build and Push Docker Images
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -28,6 +29,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      # Step to handle versioning
       - name: Read and increment version
         id: versioning
         run: |
@@ -55,22 +63,27 @@ jobs:
           # Output the new version as an action output
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-
-      - name: Build and push Docker image
+      # Build and push the mobile app Docker image
+      - name: Build and push mobile frontend Docker image
         uses: docker/build-push-action@v4
         with:
-          context: .
-          file: ./Dockerfile
+          context: ./mobile_app/frontend  # Directory containing the mobile Dockerfile
+          file: ./mobile_app/frontend/Dockerfile
           push: true
           tags: |
-            bigrock4522/${{ env.IMAGE_NAME }}:latest
-            bigrock4522/${{ env.IMAGE_NAME }}:${{ env.NEW_VERSION }}
+            ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:latest
+            ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:${{ env.NEW_VERSION }}
 
+      # Build and push the web app Docker image
+      - name: Build and push web frontend-backend Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./web_app/frontend_backend  # Directory containing the web Dockerfile
+          file: ./web_app/frontend_backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKER_USERNAME }}/${{ env.WEB_IMAGE_NAME }}:latest
+            ${{ env.DOCKER_USERNAME }}/${{ env.WEB_IMAGE_NAME }}:${{ env.NEW_VERSION }}
 
       - name: Commit updated version
         run: |
