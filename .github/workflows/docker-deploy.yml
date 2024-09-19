@@ -1,16 +1,80 @@
-name: ci
-
+name: Build and Push Docker Image to Docker Hub
 on:
   push:
-    branches: main
+    branches:
+      - "main"
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: refonte_genai_backend  # Name of your Docker image
+  CONTAINER_IMAGE: bigrock4522/refonte_genai_backend  # Full path to your image on Docker Hub
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  login:
+  build-and-push:
+    name: Build and Push to Docker Hub with Versioning
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
     steps:
-      -
-        name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Read and increment version
+        id: versioning
+        run: |
+          # Check if VERSION file exists, otherwise start with 1.0
+          if [ ! -f VERSION ]; then
+            echo "v1.0" > VERSION
+          fi
+
+          # Read the current version
+          CURRENT_VERSION=$(cat VERSION)
+
+          # Extract major and minor version numbers
+          MAJOR=$(echo $CURRENT_VERSION | cut -d '.' -f 1 | sed 's/v//')
+          MINOR=$(echo $CURRENT_VERSION | cut -d '.' -f 2)
+
+          # Increment minor version number
+          NEW_MINOR=$((MINOR + 1))
+
+          # Combine major and new minor version
+          NEW_VERSION="v${MAJOR}.${NEW_MINOR}"
+
+          # Update the VERSION file
+          echo $NEW_VERSION > VERSION
+
+          # Output the new version as an action output
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile  # Adjust the Dockerfile path if necessary
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.NEW_VERSION }}
+
+      - name: Commit updated version
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          git commit -m "Bump version to ${{ env.NEW_VERSION }}"
+          git push
