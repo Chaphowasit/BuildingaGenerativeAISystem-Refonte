@@ -68,8 +68,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.NEW_VERSION }}
+            bigrock4522/${{ env.IMAGE_NAME }}:latest
+            bigrock4522/${{ env.IMAGE_NAME }}:${{ env.NEW_VERSION }}
 
 
       - name: Commit updated version
