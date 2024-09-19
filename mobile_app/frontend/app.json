@@ -2,6 +2,9 @@
   "expo": {
     "name": "mobile_app",
     "slug": "mobile_app",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "extra": {
+      "API_URL": "http://biggy:5000"
+    }
   }
 }

@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Image, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { Video } from 'expo-av';  // Use expo-av for video playback
+import { API_URL } from '@env';
+
+console.log(API_URL);
+const BASE_URL = API_URL || 'http://localhost:5000'; 
 
 const fetchImage = async (text) => {
   try {
-    const response = await fetch('http://localhost:5000/generate-image', {
+    const response = await fetch(`${BASE_URL}/generate-image`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -26,7 +30,7 @@ const fetchImage = async (text) => {
 
 const fetchVideo = async (text) => {
   try {
-    const response = await fetch('http://localhost:5000/generate-video', {
+    const response = await fetch(`${BASE_URL}/generate-video`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

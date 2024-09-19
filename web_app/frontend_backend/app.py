@@ -44,6 +44,7 @@ CORS(app)
 
 # Set the base URL for the app
 BASE_URL = os.getenv("BASE_URL", "http://localhost:5000")
+print(f"Base URL: {BASE_URL}")
 
 # Create directories for generated images and videos
 GENERATED_IMAGES_PATH = os.path.join(app.static_folder, "generated_images")
