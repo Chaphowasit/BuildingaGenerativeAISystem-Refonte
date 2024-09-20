@@ -68,7 +68,7 @@ jobs:
           # Output the new version as an action output
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      Build and push the mobile app Docker image
+      # Build and push the mobile app Docker image
       - name: Build and push mobile frontend Docker image
         uses: docker/build-push-action@v4
         with:
