@@ -69,15 +69,15 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
       # Build and push the mobile app Docker image
-      - name: Build and push mobile frontend Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./mobile_app/frontend  # Directory containing the mobile Dockerfile
-          file: ./mobile_app/frontend/Dockerfile
-          push: true
-          tags: |
-            ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:latest
-            ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:${{ env.NEW_VERSION }}
+      # - name: Build and push mobile frontend Docker image
+      #   uses: docker/build-push-action@v4
+      #   with:
+      #     context: ./mobile_app/frontend  # Directory containing the mobile Dockerfile
+      #     file: ./mobile_app/frontend/Dockerfile
+      #     push: true
+      #     tags: |
+      #       ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:latest
+      #       ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:${{ env.NEW_VERSION }}
 
       # Build and push the web app Docker image
       - name: Build and push web frontend-backend Docker image
