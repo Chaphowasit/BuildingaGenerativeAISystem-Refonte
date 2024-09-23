@@ -68,17 +68,6 @@ jobs:
           # Output the new version as an action output
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      # # Build and push the mobile app Docker image
-      # - name: Build and push mobile frontend Docker image
-      #   uses: docker/build-push-action@v4
-      #   with:
-      #     context: ./mobile_app/frontend  # Directory containing the mobile Dockerfile
-      #     file: ./mobile_app/frontend/Dockerfile
-      #     push: true
-      #     tags: |
-      #       ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:latest
-      #       ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:${{ env.NEW_VERSION }}
-
       # Build and push the web app Docker image
       - name: Build and push web frontend-backend Docker image
         uses: docker/build-push-action@v4
@@ -90,6 +79,24 @@ jobs:
             ${{ env.DOCKER_USERNAME }}/${{ env.WEB_IMAGE_NAME }}:latest
             ${{ env.DOCKER_USERNAME }}/${{ env.WEB_IMAGE_NAME }}:${{ env.NEW_VERSION }}
 
+        
+      # # Build and push the mobile app Docker image
+      # - name: Build and push mobile frontend Docker image
+      #   uses: docker/build-push-action@v4
+      #   with:
+      #     context: ./mobile_app/frontend  # Directory containing the mobile Dockerfile
+      #     file: ./mobile_app/frontend/Dockerfile
+      #     push: true
+      #     tags: |
+      #       ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:latest
+      #       ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:${{ env.NEW_VERSION }}
+
+      # Cleanup Docker resources to free up space
+      - name: Docker system prune
+        run: |
+          docker system prune --all --force
+          docker builder prune --all --force
+
       - name: Commit updated version
         run: |
           git config --local user.name "github-actions[bot]"
@@ -97,3 +104,4 @@ jobs:
           git add VERSION
           git commit -m "Bump version to ${{ env.NEW_VERSION }}"
           git push
+
