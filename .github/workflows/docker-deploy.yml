@@ -68,27 +68,27 @@ jobs:
           # Output the new version as an action output
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      # Build and push the mobile app Docker image
-      - name: Build and push mobile frontend Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./mobile_app/frontend  # Directory containing the mobile Dockerfile
-          file: ./mobile_app/frontend/Dockerfile
-          push: true
-          tags: |
-            ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:latest
-            ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:${{ env.NEW_VERSION }}
-
-      # # Build and push the web app Docker image
-      # - name: Build and push web frontend-backend Docker image
+      # # Build and push the mobile app Docker image
+      # - name: Build and push mobile frontend Docker image
       #   uses: docker/build-push-action@v4
       #   with:
-      #     context: ./web_app/frontend_backend  # Directory containing the web Dockerfile
-      #     file: ./web_app/frontend_backend/Dockerfile
+      #     context: ./mobile_app/frontend  # Directory containing the mobile Dockerfile
+      #     file: ./mobile_app/frontend/Dockerfile
       #     push: true
       #     tags: |
-      #       ${{ env.DOCKER_USERNAME }}/${{ env.WEB_IMAGE_NAME }}:latest
-      #       ${{ env.DOCKER_USERNAME }}/${{ env.WEB_IMAGE_NAME }}:${{ env.NEW_VERSION }}
+      #       ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:latest
+      #       ${{ env.DOCKER_USERNAME }}/${{ env.MOBILE_IMAGE_NAME }}:${{ env.NEW_VERSION }}
+
+      # Build and push the web app Docker image
+      - name: Build and push web frontend-backend Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./web_app/frontend_backend  # Directory containing the web Dockerfile
+          file: ./web_app/frontend_backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKER_USERNAME }}/${{ env.WEB_IMAGE_NAME }}:latest
+            ${{ env.DOCKER_USERNAME }}/${{ env.WEB_IMAGE_NAME }}:${{ env.NEW_VERSION }}
 
       - name: Commit updated version
         run: |
